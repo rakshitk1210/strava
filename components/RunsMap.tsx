@@ -14,45 +14,37 @@ export default function RunsMap({ runs }: RunsMapProps) {
   const initialized = useRef(false)
 
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:16',message:'useEffect called',data:{hasMapContainer:!!mapContainer.current,hasMapInstance:!!map.current,isInitialized:initialized.current,runsCount:runs.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B,C,D'})}).catch(()=>{});
-    // #endregion
     if (!mapContainer.current || initialized.current) return
 
     // Dynamically import mapbox-gl to avoid SSR issues
     import('mapbox-gl').then((mapboxgl) => {
       mapboxgl.default.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:20',message:'Mapbox loaded, creating map',data:{runsCount:runs.length},timestamp:Date.now(),sessionId:'debug-session',runId:'debug',hypothesisId:'B,D'})}).catch(()=>{});
-      // #endregion
 
       // Calculate bounds from all runs
       const runsWithCoords = runs.filter(run => run.start_latlng && run.start_latlng[0] && run.start_latlng[1])
       
       if (runsWithCoords.length === 0) return
 
-      // Use first run's location as center
-      const firstRun = runsWithCoords[0]
-      const center: [number, number] = [firstRun.start_latlng![1], firstRun.start_latlng![0]]
+      // Sort by date to get most recent run
+      const sortedRuns = [...runsWithCoords].sort((a, b) => 
+        new Date(b.start_date_local).getTime() - new Date(a.start_date_local).getTime()
+      )
+      
+      // Use most recent run's location as center
+      const mostRecentRun = sortedRuns[0]
+      const center: [number, number] = [mostRecentRun.start_latlng![1], mostRecentRun.start_latlng![0]]
 
-      // Initialize map
+      // Initialize map with dark theme
       map.current = new mapboxgl.default.Map({
         container: mapContainer.current!,
-        style: 'mapbox://styles/mapbox/outdoors-v12',
+        style: 'mapbox://styles/mapbox/dark-v11',
         center: center,
         zoom: 12
       })
       
       initialized.current = true
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:40',message:'Map instance created, initialized flag set',data:{mapExists:!!map.current,initialized:initialized.current},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B,D,E'})}).catch(()=>{});
-      // #endregion
 
       map.current.on('load', () => {
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:45',message:'Map load event fired',data:{runsToAdd:runs.length,initialized:initialized.current},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
         // Add routes for each run
         runs.forEach((run, index) => {
           if (run.map?.summary_polyline) {
@@ -66,15 +58,7 @@ export default function RunsMap({ runs }: RunsMapProps) {
 
               // Check if source already exists
               const sourceExists = map.current.getSource(sourceId)
-              // #region agent log
-              fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:52',message:'Checking source',data:{sourceId,sourceExists:!!sourceExists,runId:run.id,index},timestamp:Date.now(),sessionId:'debug-session',runId:'debug',hypothesisId:'A,D'})}).catch(()=>{});
-              // #endregion
-              if (sourceExists) {
-                // #region agent log
-                fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:53',message:'Source already exists, skipping',data:{sourceId,runId:run.id},timestamp:Date.now(),sessionId:'debug-session',runId:'debug',hypothesisId:'A'})}).catch(()=>{});
-                // #endregion
-                return
-              }
+              if (sourceExists) return
 
               // Add route line
               map.current.addSource(sourceId, {
@@ -102,21 +86,21 @@ export default function RunsMap({ runs }: RunsMapProps) {
                   'line-cap': 'round'
                 },
                 paint: {
-                  'line-color': '#FC4C02',
+                  'line-color': '#04b488',
                   'line-width': 3,
-                  'line-opacity': 0.7
+                  'line-opacity': 0.8
                 }
               })
 
-              // Add start marker
+              // Add start marker with green color
               if (run.start_latlng) {
-                new mapboxgl.default.Marker({ color: '#22c55e' })
+                new mapboxgl.default.Marker({ color: '#04b488' })
                   .setLngLat([run.start_latlng[1], run.start_latlng[0]])
                   .setPopup(
-                    new mapboxgl.default.Popup().setHTML(
-                      `<div style="color: black;">
-                        <strong>${run.name}</strong><br/>
-                        ${(run.distance / 1000).toFixed(2)} km
+                    new mapboxgl.default.Popup({ className: 'dark-popup' }).setHTML(
+                      `<div style="background: #151819; color: #f2f5f7; padding: 8px; border-radius: 8px;">
+                        <strong style="font-family: 'Titillium Web', sans-serif;">${run.name}</strong><br/>
+                        <span style="color: #696e70;">${(run.distance / 1000).toFixed(2)} km</span>
                       </div>`
                     )
                   )
@@ -148,26 +132,35 @@ export default function RunsMap({ runs }: RunsMapProps) {
     })
 
     return () => {
-      // #region agent log
-      fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:133',message:'Cleanup function called',data:{hasMap:!!map.current,initialized:initialized.current},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B,E'})}).catch(()=>{});
-      // #endregion
       if (map.current) {
         map.current.remove()
         map.current = null
         initialized.current = false
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/b2a6f3b5-f17d-44c2-adad-3120d905d8cb',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:138',message:'Map removed, flags reset',data:{initialized:initialized.current},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
       }
     }
   }, [])
 
   return (
-    <div 
-      ref={mapContainer} 
-      className="w-full h-[600px] rounded-lg shadow-lg"
-      style={{ minHeight: '600px' }}
-    />
+    <div className="bg-[#151819] flex flex-col gap-[24px] items-start p-[24px] pt-[16px] relative rounded-[16px] w-full h-full" data-name="Map component">
+      {/* Header */}
+      <div className="flex flex-col items-start pb-[2px] pt-0 px-0 relative shrink-0 w-full">
+        <div className="flex flex-col justify-center leading-[0] mb-[-2px] relative shrink-0 text-[#f2f5f7]">
+          <p className="font-['Titillium_Web',sans-serif] font-bold text-[20px] leading-[1.4] tracking-[-0.6px]">
+            Running routes
+          </p>
+        </div>
+        <p className="font-['Titillium_Web',sans-serif] font-semibold leading-[1.5] min-w-full not-italic relative shrink-0 text-[#696e70] text-[14px] tracking-[-0.42px]">
+          Click on the routes to know more details
+        </p>
+      </div>
+
+      {/* Map Frame */}
+      <div 
+        ref={mapContainer} 
+        className="flex-1 w-full overflow-hidden relative rounded-[12px] bg-[#0e1111]"
+        style={{ minHeight: '450px' }}
+      />
+    </div>
   )
 }
 

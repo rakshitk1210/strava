@@ -1,10 +1,17 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Titillium_Web } from "next/font/google"
 import "./globals.css"
 
 const inter = Inter({ 
   subsets: ["latin"],
   variable: '--font-inter',
+  weight: ['400', '500', '600'],
+})
+
+const titilliumWeb = Titillium_Web({
+  subsets: ["latin"],
+  variable: '--font-titillium-web',
+  weight: ['400', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -19,7 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <head>
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&display=swap" 
+          rel="stylesheet" 
+        />
+      </head>
+      <body className={`${inter.variable} ${titilliumWeb.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>
