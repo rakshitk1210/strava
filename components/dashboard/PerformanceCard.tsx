@@ -17,7 +17,7 @@ interface PerformanceItemProps {
 
 function PerformanceItem({ label, value, subtext, isWaiting }: PerformanceItemProps) {
   return (
-    <div className="flex gap-[10px] md:gap-[12px] items-center relative shrink-0 w-full">
+    <div className="flex gap-[32px] md:gap-[16px] items-center relative shrink-0 w-full">
       {/* Label Box */}
       <div className="bg-[#0e1111] h-[38px] w-[38px] md:h-[41px] md:w-[41px] overflow-hidden relative rounded-[6px] md:rounded-[8px] shrink-0 flex items-center justify-center">
         <p className={cn(
@@ -27,14 +27,14 @@ function PerformanceItem({ label, value, subtext, isWaiting }: PerformanceItemPr
           {label}
         </p>
       </div>
-      
+
       {/* Text Info */}
       <div className={cn(
         "flex flex-[1_0_0] flex-col items-start min-h-px min-w-px relative",
         isWaiting ? "text-[#44494b]" : ""
       )}>
         <p className={cn(
-          "font-['Teko',sans-serif] font-bold leading-none relative shrink-0 text-[18px] md:text-[20px] w-full",
+          "font-['Teko',sans-serif] font-bold leading-[1] relative shrink-0 text-[18px] md:text-[20px] h-[18px] md:h-[24px] w-full flex items-center",
           isWaiting ? "text-[#44494b]" : "text-[#f2f5f7]"
         )}>
           {value}
@@ -57,9 +57,9 @@ interface PerformanceCardProps {
 
 export function PerformanceCard({ runs, unit }: PerformanceCardProps) {
   const prs = getAllPRs(runs, unit);
-  
+
   const performanceData: PerformanceItemProps[] = [
-    prs['5K'] 
+    prs['5K']
       ? { label: '5K', value: prs['5K'].time, subtext: `${prs['5K'].date} • ${prs['5K'].pace}/${unit.toLowerCase()}` }
       : { label: '5K', value: '--', subtext: 'Waiting for you : )', isWaiting: true },
     prs['10K']
@@ -94,7 +94,7 @@ export function PerformanceCard({ runs, unit }: PerformanceCardProps) {
       </div>
 
       {/* List */}
-      <div className="flex flex-col gap-[14px] md:gap-[16px] items-start relative shrink-0 w-full">
+      <div className="flex flex-col gap-[14px] md:gap-[24px] items-start relative shrink-0 w-full">
         {performanceData.map((item, index) => (
           <PerformanceItem key={index} {...item} />
         ))}

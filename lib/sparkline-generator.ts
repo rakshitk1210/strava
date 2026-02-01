@@ -59,9 +59,9 @@ export function getSparklineData(
   metricType: 'pace' | 'distance' | 'time' | 'elevation' | 'sessions',
   unit: 'Km' | 'Miles' = 'Km',
   numBuckets: number = 20
-): { stroke: string; fill: string } {
+): { stroke: string; fill: string; startValue: number; endValue: number } {
   if (runs.length === 0) {
-    return { stroke: '', fill: '' };
+    return { stroke: '', fill: '', startValue: 0, endValue: 0 };
   }
 
   // Sort runs by date (oldest first for time series)
@@ -127,7 +127,7 @@ export function getSparklineData(
   // Calculate averages for pace, or keep totals for others
   const values = buckets.map((sum, index) => {
     if (bucketCounts[index] === 0) return 0;
-    return metricType === 'pace' || metricType === 'sessions' 
+    return metricType === 'pace' || metricType === 'sessions'
       ? sum / (metricType === 'pace' ? bucketCounts[index] : 1)
       : sum;
   });
@@ -138,24 +138,30 @@ export function getSparklineData(
       // Find previous and next non-zero values
       let prevValue = 0;
       let nextValue = 0;
-      
+
       for (let j = i - 1; j >= 0; j--) {
         if (values[j] > 0) {
           prevValue = values[j];
           break;
         }
       }
-      
+
       for (let j = i + 1; j < values.length; j++) {
         if (values[j] > 0) {
           nextValue = values[j];
           break;
         }
       }
-      
+
       values[i] = prevValue > 0 ? prevValue : nextValue;
     }
   }
 
-  return generateSparklinePath(values);
+  const { stroke, fill } = generateSparklinePath(values);
+  return {
+    stroke,
+    fill,
+    startValue: values[0] || 0,
+    endValue: values[values.length - 1] || 0
+  };
 }

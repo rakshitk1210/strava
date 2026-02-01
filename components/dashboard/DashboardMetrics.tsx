@@ -44,25 +44,26 @@ function StatCard({ label, value, unit, fill, stroke, color, gradientId }: StatC
             </p>
           </div>
         </div>
-        
+
         {/* Right: Sparkline - Takes remaining space */}
         <div className="flex-1 h-full min-h-px min-w-px relative">
           <div className="absolute bottom-0 left-0 w-full h-[50px]">
             <svg className="w-full h-full block" viewBox="0 0 231.536 50.5742" preserveAspectRatio="none">
               <defs>
                 <linearGradient id={`${gradientId}-mobile`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-                  <stop offset="100%" stopColor={color} stopOpacity="0" />
+                  <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+                  <stop offset="100%" stopColor={color} stopOpacity="0.1" />
                 </linearGradient>
               </defs>
-              <path 
-                d={fill} 
+              <path
+                d={fill}
                 fill={`url(#${gradientId}-mobile)`}
+                fillOpacity="1"
               />
-              <path 
-                d={stroke} 
-                stroke={color} 
-                strokeWidth="2" 
+              <path
+                d={stroke}
+                stroke={color}
+                strokeWidth="2"
                 fill="none"
               />
             </svg>
@@ -85,24 +86,25 @@ function StatCard({ label, value, unit, fill, stroke, color, gradientId }: StatC
             </p>
           </div>
         </div>
-        
+
         {/* Sparkline - Below content */}
         <div className="absolute bottom-0 left-0 w-full h-[42px] lg:h-[50px]">
           <svg className="w-full h-full block" viewBox="0 0 231.536 50.5742" preserveAspectRatio="none">
             <defs>
               <linearGradient id={`${gradientId}-desktop`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={color} stopOpacity="0" />
+                <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.1" />
               </linearGradient>
             </defs>
-            <path 
-              d={fill} 
+            <path
+              d={fill}
               fill={`url(#${gradientId}-desktop)`}
+              fillOpacity="0.6"
             />
-            <path 
-              d={stroke} 
-              stroke={color} 
-              strokeWidth="2" 
+            <path
+              d={stroke}
+              stroke={color}
+              strokeWidth="2"
               fill="none"
             />
           </svg>
@@ -131,103 +133,118 @@ export function DashboardMetrics({ runs, unit }: DashboardMetricsProps) {
   const elevationSparkline = getSparklineData(runs, 'elevation', unit, 20);
   const sessionsSparkline = getSparklineData(runs, 'sessions', unit, 20);
 
+  const getTrendColor = (start: number, end: number, type: 'pace' | 'volume') => {
+    // For pace, lower is better (faster)
+    if (type === 'pace') {
+      return end < start ? '#04b488' : '#fc5200';
+    }
+    // For others (distance, etc), higher is better
+    return end > start ? '#04b488' : '#fc5200';
+  };
+
+  const paceColor = getTrendColor(paceSparkline.startValue, paceSparkline.endValue, 'pace');
+  const distanceColor = getTrendColor(distanceSparkline.startValue, distanceSparkline.endValue, 'volume');
+  const timeColor = getTrendColor(timeSparkline.startValue, timeSparkline.endValue, 'volume');
+  const elevationColor = getTrendColor(elevationSparkline.startValue, elevationSparkline.endValue, 'volume');
+  const sessionsColor = getTrendColor(sessionsSparkline.startValue, sessionsSparkline.endValue, 'volume');
+
   return (
     <div className="w-full max-w-[1440px] px-[0px] pb-[0px] pt-[32px] md:pt-[24px] lg:pt-[32px]">
       {/* Mobile: Vertical stack with horizontal card content */}
       <div className="md:hidden flex flex-col gap-[32px] px-[16px]">
-        <StatCard 
-          label="Average pace" 
-          value={avgPace} 
-          unit={`/${unit.toLowerCase()}`} 
-          fill={paceSparkline.fill} 
-          stroke={paceSparkline.stroke} 
-          color="#04b488" 
+        <StatCard
+          label="Average pace"
+          value={avgPace}
+          unit={`/${unit.toLowerCase()}`}
+          fill={paceSparkline.fill}
+          stroke={paceSparkline.stroke}
+          color={paceColor}
           gradientId="grad-pace"
         />
-        <StatCard 
-          label="Distance" 
-          value={totalDistance.toString()} 
-          unit={unit.toLowerCase()} 
-          fill={distanceSparkline.fill} 
-          stroke={distanceSparkline.stroke} 
-          color="#fc5200"
+        <StatCard
+          label="Distance"
+          value={totalDistance.toString()}
+          unit={unit.toLowerCase()}
+          fill={distanceSparkline.fill}
+          stroke={distanceSparkline.stroke}
+          color={distanceColor}
           gradientId="grad-distance"
         />
-        <StatCard 
-          label="Time" 
-          value={totalTime.toString()} 
-          unit="hrs" 
-          fill={timeSparkline.fill} 
-          stroke={timeSparkline.stroke} 
-          color="#04b488"
+        <StatCard
+          label="Time"
+          value={totalTime.toString()}
+          unit="hrs"
+          fill={timeSparkline.fill}
+          stroke={timeSparkline.stroke}
+          color={timeColor}
           gradientId="grad-time"
         />
-        <StatCard 
-          label="Elevation" 
-          value={totalElevation.toString()} 
-          unit="m" 
-          fill={elevationSparkline.fill} 
-          stroke={elevationSparkline.stroke} 
-          color="#04b488"
+        <StatCard
+          label="Elevation"
+          value={totalElevation.toString()}
+          unit="m"
+          fill={elevationSparkline.fill}
+          stroke={elevationSparkline.stroke}
+          color={elevationColor}
           gradientId="grad-elevation"
         />
-        <StatCard 
-          label="Sessions" 
-          value={totalSessions.toString()} 
-          unit="" 
-          fill={sessionsSparkline.fill} 
-          stroke={sessionsSparkline.stroke} 
-          color="#fc5200"
+        <StatCard
+          label="Sessions"
+          value={totalSessions.toString()}
+          unit=""
+          fill={sessionsSparkline.fill}
+          stroke={sessionsSparkline.stroke}
+          color={sessionsColor}
           gradientId="grad-sessions"
         />
       </div>
 
       {/* Tablet & Desktop: Grid */}
       <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-5 gap-[24px] lg:gap-[32px]">
-        <StatCard 
-          label="Average pace" 
-          value={avgPace} 
-          unit={`/${unit.toLowerCase()}`} 
-          fill={paceSparkline.fill} 
-          stroke={paceSparkline.stroke} 
-          color="#04b488" 
-          gradientId="grad-pace"
+        <StatCard
+          label="Average pace"
+          value={avgPace}
+          unit={`/${unit.toLowerCase()}`}
+          fill={paceSparkline.fill}
+          stroke={paceSparkline.stroke}
+          color={paceColor}
+          gradientId="grad-pace-lg"
         />
-        <StatCard 
-          label="Distance" 
-          value={totalDistance.toString()} 
-          unit={unit.toLowerCase()} 
-          fill={distanceSparkline.fill} 
-          stroke={distanceSparkline.stroke} 
-          color="#fc5200"
-          gradientId="grad-distance"
+        <StatCard
+          label="Distance"
+          value={totalDistance.toString()}
+          unit={unit.toLowerCase()}
+          fill={distanceSparkline.fill}
+          stroke={distanceSparkline.stroke}
+          color={distanceColor}
+          gradientId="grad-distance-lg"
         />
-        <StatCard 
-          label="Time" 
-          value={totalTime.toString()} 
-          unit="hrs" 
-          fill={timeSparkline.fill} 
-          stroke={timeSparkline.stroke} 
-          color="#04b488"
-          gradientId="grad-time"
+        <StatCard
+          label="Time"
+          value={totalTime.toString()}
+          unit="hrs"
+          fill={timeSparkline.fill}
+          stroke={timeSparkline.stroke}
+          color={timeColor}
+          gradientId="grad-time-lg"
         />
-        <StatCard 
-          label="Elevation" 
-          value={totalElevation.toString()} 
-          unit="m" 
-          fill={elevationSparkline.fill} 
-          stroke={elevationSparkline.stroke} 
-          color="#04b488"
-          gradientId="grad-elevation"
+        <StatCard
+          label="Elevation"
+          value={totalElevation.toString()}
+          unit="m"
+          fill={elevationSparkline.fill}
+          stroke={elevationSparkline.stroke}
+          color={elevationColor}
+          gradientId="grad-elevation-lg"
         />
-        <StatCard 
-          label="Sessions" 
-          value={totalSessions.toString()} 
-          unit="" 
-          fill={sessionsSparkline.fill} 
-          stroke={sessionsSparkline.stroke} 
-          color="#fc5200"
-          gradientId="grad-sessions"
+        <StatCard
+          label="Sessions"
+          value={totalSessions.toString()}
+          unit=""
+          fill={sessionsSparkline.fill}
+          stroke={sessionsSparkline.stroke}
+          color={sessionsColor}
+          gradientId="grad-sessions-lg"
         />
       </div>
     </div>
