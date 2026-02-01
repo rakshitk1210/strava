@@ -9,12 +9,11 @@ import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics'
 import { PerformanceCard } from '@/components/dashboard/PerformanceCard'
 import { RecordsCard } from '@/components/dashboard/RecordsCard'
 import { RunningTrends } from '@/components/dashboard/RunningTrends'
-import { MonthlyStreak } from '@/components/dashboard/MonthlyStreak'
-import { PhotoGallery } from '@/components/dashboard/PhotoGallery'
+import { YearStreaks } from '@/components/dashboard/YearStreaks'
 import { DashboardFooter } from '@/components/dashboard/DashboardFooter'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns'
+import { startOfYear, endOfYear, isWithinInterval, getYear } from 'date-fns'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 export default function Home() {
@@ -24,24 +23,20 @@ export default function Home() {
   const [unit, setUnit] = useState<'Km' | 'Miles'>('Km')
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [selectedRun, setSelectedRun] = useState<StravaActivity | null>(null)
-  const [selectedMonth, setSelectedMonth] = useState<Date | null>(null) // null = "1 Year"
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [isOwnData, setIsOwnData] = useState(false)
+  const [isDemo, setIsDemo] = useState(false)
 
-  // Filter runs by selected month
+  // Filter runs by selected year
   const filteredRuns = useMemo(() => {
-    // If selectedMonth is null, show all runs from the last year (1 Year option)
-    if (selectedMonth === null) {
-      return runs;
-    }
-
-    // Otherwise filter by the selected specific month
-    const monthStart = startOfMonth(selectedMonth);
-    const monthEnd = endOfMonth(selectedMonth);
+    const yearStart = startOfYear(new Date(selectedYear, 0, 1));
+    const yearEnd = endOfYear(new Date(selectedYear, 0, 1));
 
     return runs.filter(run => {
       const runDate = new Date(run.start_date_local);
-      return isWithinInterval(runDate, { start: monthStart, end: monthEnd });
+      return isWithinInterval(runDate, { start: yearStart, end: yearEnd });
     });
-  }, [runs, selectedMonth]);
+  }, [runs, selectedYear]);
 
   useEffect(() => {
     fetchActivities()
@@ -60,12 +55,32 @@ export default function Home() {
 
       const data = await response.json()
       setRuns(data.activities)
+      setIsOwnData(data.isOwnData || false)
+      setIsDemo(data.isDemo || false)
       setLastUpdated(new Date())
     } catch (err) {
       console.error('Error fetching activities:', err)
       setError('Failed to load activities. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConnectStrava = () => {
+    const clientId = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID
+    const redirectUri = `${window.location.origin}/api/strava/callback`
+    const scope = 'read,activity:read_all'
+    
+    window.location.href = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`
+  }
+
+  const handleDisconnect = async () => {
+    try {
+      await fetch('/api/strava/disconnect', { method: 'POST' })
+      window.location.reload()
+    } catch (err) {
+      console.error('Error disconnecting:', err)
+      setError('Failed to disconnect. Please try again.')
     }
   }
 
@@ -99,62 +114,59 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#060809] text-[#f2f5f7] flex flex-col items-center pb-0 font-['Titillium_Web',sans-serif]">
+    <div className="min-h-screen w-full bg-[#060809] text-[#f2f5f7] flex flex-col items-center font-['Titillium_Web',sans-serif] pb-[80px] md:pb-0">
       {/* Header Section */}
       <DashboardHeader 
         lastUpdated={lastUpdated}
         unit={unit}
         onUnitChange={setUnit}
-        selectedMonth={selectedMonth}
-        onMonthChange={setSelectedMonth}
+        selectedYear={selectedYear}
+        onYearChange={setSelectedYear}
+        isDemo={isDemo}
+        isOwnData={isOwnData}
+        onConnect={handleConnectStrava}
+        onDisconnect={handleDisconnect}
       />
       
-      {/* Metrics Section */}
-      <DashboardMetrics runs={filteredRuns} unit={unit} />
-      
-      {/* Main Content Stack */}
-      <div className="w-full max-w-[1440px] flex flex-col gap-[40px] px-[0px] mb-[80px]">
+      {/* Main Content Stack - Mobile First, Desktop Responsive */}
+      <div className="w-full max-w-[1440px] flex flex-col gap-[32px] md:gap-[48px] lg:gap-[64px] mb-[80px] md:mb-[100px] lg:mb-[120px] px-[16px] md:px-[32px] lg:px-[64px] justify-start items-center">
         
-        {/* Row 1: Performance & Map */}
-        <div className="flex flex-col lg:flex-row gap-[40px] w-full">
-          {/* Left: Fixed Width - Always shows ALL TIME data */}
-          <div className="w-full lg:w-[264px] shrink-0 h-[541px]">
-             <PerformanceCard runs={runs} unit={unit} />
+        {/* Metrics Section - Stacks vertically on mobile, grid on larger screens */}
+        <DashboardMetrics runs={filteredRuns} unit={unit} />
+        
+        {/* Map Section - Smaller height on mobile */}
+        <div className="w-full h-[400px] md:h-[480px] lg:h-[557px]">
+          <RunsMap runs={filteredRuns} />
+        </div>
+
+        {/* Records & Trends Row - Stack on mobile */}
+        <div className="flex flex-col lg:flex-row gap-[32px] w-full">
+          {/* Records - Full width on mobile */}
+          <div className="w-full lg:w-[328px] xl:w-[264px] shrink-0 h-full">
+            <RecordsCard runs={runs} unit={unit} />
           </div>
-          {/* Right: Flexible Width */}
-          <div className="w-full lg:flex-1 min-w-0 h-[541px]">
-             <RunsMap runs={filteredRuns} />
+          {/* Trends - Full width on mobile, min height for chart visibility */}
+          <div className="w-full lg:flex-1 min-w-0 h-[400px] md:h-[450px] lg:h-auto">
+            <RunningTrends runs={filteredRuns} unit={unit} />
           </div>
         </div>
 
-        {/* Row 2: Monthly Streak & Photo Gallery */}
-        <div className="w-full bg-[#151819] rounded-[16px] p-[24px]">
-          <div className="flex flex-col lg:flex-row gap-[40px] w-full">
-            <div className="w-full lg:w-[264px] shrink-0">
-               <MonthlyStreak runs={filteredRuns} />
-            </div>
-            <div className="w-full lg:flex-1 min-w-0 overflow-hidden">
-               <PhotoGallery runs={filteredRuns} onRunClick={setSelectedRun} unit={unit} />
-            </div>
+        {/* Performance & Consistency Row - Stack on mobile */}
+        <div className="flex flex-col lg:flex-row gap-[32px] w-full">
+          {/* Performance - Full width on mobile */}
+          <div className="w-full lg:w-[328px] xl:w-[264px] shrink-0 h-full">
+            <PerformanceCard runs={runs} unit={unit} />
           </div>
-        </div>
-
-        {/* Row 3: Records & Running Trends */}
-        <div className="flex flex-col lg:flex-row gap-[40px] w-full h-auto lg:h-[360px]">
-          <div className="w-full lg:w-[264px] shrink-0 h-full">
-             <RecordsCard runs={runs} unit={unit} />
-          </div>
-          <div className="w-full lg:flex-1 min-w-0 h-full">
-             <RunningTrends runs={filteredRuns} unit={unit} />
+          {/* Running Days - Full width on mobile, scrollable on all screens */}
+          <div className="w-full lg:flex-1 min-w-0 h-[640px] md:h-[700px] lg:h-full">
+            <YearStreaks runs={filteredRuns} year={selectedYear} />
           </div>
         </div>
 
       </div>
 
-      {/* Footer Branding with spacing */}
-      <div className="mt-[40px]">
-        <DashboardFooter />
-      </div>
+      {/* Footer Branding */}
+      <DashboardFooter />
 
       {/* Run Details Modal */}
       {selectedRun && (

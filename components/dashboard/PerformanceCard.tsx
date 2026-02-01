@@ -17,11 +17,11 @@ interface PerformanceItemProps {
 
 function PerformanceItem({ label, value, subtext, isWaiting }: PerformanceItemProps) {
   return (
-    <div className="flex gap-[12px] items-center relative shrink-0 w-full">
+    <div className="flex gap-[10px] md:gap-[12px] items-center relative shrink-0 w-full">
       {/* Label Box */}
-      <div className="bg-[#0e1111] h-[41px] w-[41px] overflow-hidden relative rounded-[8px] shrink-0 flex items-center justify-center">
+      <div className="bg-[#0e1111] h-[38px] w-[38px] md:h-[41px] md:w-[41px] overflow-hidden relative rounded-[6px] md:rounded-[8px] shrink-0 flex items-center justify-center">
         <p className={cn(
-          "font-['Teko',sans-serif] font-semibold leading-none text-[20px] text-center",
+          "font-['Teko',sans-serif] font-semibold leading-none text-[18px] md:text-[20px] text-center",
           isWaiting ? "text-[#44494b]" : "text-[#f2f5f7]"
         )}>
           {label}
@@ -34,13 +34,13 @@ function PerformanceItem({ label, value, subtext, isWaiting }: PerformanceItemPr
         isWaiting ? "text-[#44494b]" : ""
       )}>
         <p className={cn(
-          "font-['Teko',sans-serif] font-bold leading-none relative shrink-0 text-[20px] w-full",
+          "font-['Teko',sans-serif] font-bold leading-none relative shrink-0 text-[18px] md:text-[20px] w-full",
           isWaiting ? "text-[#44494b]" : "text-[#f2f5f7]"
         )}>
           {value}
         </p>
         <p className={cn(
-          "font-['Titillium_Web',sans-serif] font-semibold leading-[1.5] not-italic relative shrink-0 text-[14px] tracking-[-0.42px] w-full",
+          "font-['Titillium_Web',sans-serif] font-semibold leading-[1.5] not-italic relative shrink-0 text-[13px] md:text-[14px] tracking-[-0.42px] w-full",
           isWaiting ? "text-[#44494b]" : "text-[#696e70]"
         )}>
           {subtext}
@@ -80,21 +80,21 @@ export function PerformanceCard({ runs, unit }: PerformanceCardProps) {
   ];
 
   return (
-    <div className="bg-[#151819] flex flex-col gap-[24px] items-start p-[24px] pt-[16px] relative rounded-[16px] w-full h-[541px]" data-name="Performance">
+    <div className="bg-[rgba(21,24,25,0)] flex flex-col gap-[20px] md:gap-[24px] items-start relative rounded-[0px] w-full h-full min-h-[400px] md:min-h-[461px] p-[0px]" data-name="Performance">
       {/* Header */}
       <div className="flex flex-col items-start pb-[2px] pt-0 px-0 relative shrink-0 w-full">
+        <p className="font-['Titillium_Web',sans-serif] font-semibold leading-[1.5] not-italic relative shrink-0 text-[#696e70] text-[12px] md:text-[13px] lg:text-[14px] tracking-[-0.42px] w-full">
+          Push
+        </p>
         <div className="flex flex-col justify-center leading-[0] mb-[-2px] relative shrink-0">
-          <p className="font-['Titillium_Web',sans-serif] font-bold leading-[1.4] text-[#f2f5f7] text-[20px] tracking-[-0.6px]">
+          <p className="font-['Titillium_Web',sans-serif] font-bold leading-[1.4] text-[#f2f5f7] text-[20px] md:text-[22px] lg:text-[24px] tracking-[-0.72px]">
             Performance
           </p>
         </div>
-        <p className="font-['Titillium_Web',sans-serif] font-semibold leading-[1.5] not-italic relative shrink-0 text-[#696e70] text-[14px] tracking-[-0.42px] w-full">
-          All time data
-        </p>
       </div>
 
       {/* List */}
-      <div className="flex flex-col gap-[24px] items-start relative shrink-0 w-full">
+      <div className="flex flex-col gap-[14px] md:gap-[16px] items-start relative shrink-0 w-full">
         {performanceData.map((item, index) => (
           <PerformanceItem key={index} {...item} />
         ))}

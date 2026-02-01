@@ -17,6 +17,14 @@ const titilliumWeb = Titillium_Web({
 export const metadata: Metadata = {
   title: "Strava Running Tracker",
   description: "Track and visualize your running activities from Strava",
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
+  themeColor: '#060809',
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({

@@ -34,14 +34,34 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values);
     const range = maxVal - minVal;
-    const padding = range * 0.2;
     
+    // If range is too small (all values are similar or zero), create a sensible range
+    if (range < 0.1) {
+      const baseValue = maxVal > 0 ? maxVal : 5;
+      const domainMin = Math.max(0, Math.floor(baseValue * 0.8));
+      const domainMax = Math.ceil(baseValue * 1.2);
+      const step = (domainMax - domainMin) / 4;
+      const ticks = Array.from({ length: 5 }, (_, i) => Math.round((domainMin + step * i) * 10) / 10);
+      return { domain: [domainMin, domainMax] as [number, number], ticks };
+    }
+    
+    const padding = range * 0.2;
     const domainMin = Math.max(0, Math.floor(minVal - padding));
     const domainMax = Math.ceil(maxVal + padding);
     
     // Generate 5 ticks
     const step = (domainMax - domainMin) / 4;
     const ticks = Array.from({ length: 5 }, (_, i) => Math.round((domainMin + step * i) * 10) / 10);
+    
+    // Ensure ticks are unique by using a Set and regenerating if needed
+    const uniqueTicks = [...new Set(ticks)];
+    if (uniqueTicks.length < 5) {
+      // Fallback: create evenly spaced ticks with more precision
+      const preciseTicks = Array.from({ length: 5 }, (_, i) => 
+        Math.round((domainMin + step * i) * 100) / 100
+      );
+      return { domain: [domainMin, domainMax] as [number, number], ticks: preciseTicks };
+    }
     
     return { domain: [domainMin, domainMax] as [number, number], ticks };
   };
@@ -84,16 +104,16 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
   const currentTab = tabs[activeTab];
 
   return (
-    <div className="bg-[#151819] rounded-[16px] p-[16px] pb-[20px] w-full h-full flex flex-col gap-[20px] relative overflow-hidden">
+    <div className="bg-[rgba(21,24,25,0)] rounded-[0px] w-full h-full flex flex-col gap-[16px] md:gap-[18px] lg:gap-[20px] relative overflow-hidden p-[0px]">
       {/* Header */}
-      <div className="flex items-start justify-between w-full z-10 relative shrink-0">
+      <div className="flex flex-col md:flex-row items-start justify-between w-full z-10 relative shrink-0 gap-[12px] md:gap-0 lg:items-center">
         <div className="flex flex-col gap-[2px]">
-          <h2 className="font-['Titillium_Web',sans-serif] font-bold text-[20px] leading-[1.4] text-[#f2f5f7] tracking-[-0.6px]">
+          <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] md:text-[13px] lg:text-[14px] leading-[1.5] text-[#696e70] tracking-[-0.42px]">
+            Diligence
+          </p>
+          <h2 className="font-['Titillium_Web',sans-serif] font-bold text-[20px] md:text-[22px] lg:text-[24px] leading-[1.4] text-[#f2f5f7] tracking-[-0.72px]">
             Running trends
           </h2>
-          <p className="font-['Titillium_Web',sans-serif] font-semibold text-[14px] leading-[1.5] text-[#696e70] tracking-[-0.42px]">
-            Pace • Distance • Elevation
-          </p>
         </div>
 
         {/* Tabs */}
@@ -103,7 +123,7 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-[16px] py-[8px] rounded-[99px] text-[12px] font-['Titillium_Web',sans-serif] font-semibold transition-all leading-[18px]",
+                "px-[12px] md:px-[14px] lg:px-[16px] py-[6px] md:py-[7px] lg:py-[8px] rounded-[99px] text-[12px] md:text-[13px] lg:text-[14px] font-['Titillium_Web',sans-serif] font-semibold transition-all leading-[18px]",
                 activeTab === tab
                   ? "bg-[#f2f5f7] text-[#060809]"
                   : "text-[#989ea0] hover:text-[#f2f5f7]"
@@ -116,7 +136,7 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
       </div>
 
       {/* Chart */}
-      <div className="w-full flex-1 min-h-0 relative z-10">
+      <div className="w-full flex-1 min-h-0 relative z-10 border border-[#252A2C] p-[12px] md:p-[14px] lg:p-[16px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={currentTab.data} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} barGap={2}>
             <defs>
@@ -145,7 +165,7 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
               tickLine={false} 
               tick={{ fill: '#696e70', fontSize: 10, fontFamily: 'Titillium Web' }}
               dy={10}
-              interval={1}
+              interval="preserveStartEnd"
             />
             <YAxis 
               axisLine={false} 

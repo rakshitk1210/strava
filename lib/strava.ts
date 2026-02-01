@@ -1,5 +1,16 @@
 const STRAVA_API_BASE = 'https://www.strava.com/api/v3'
 
+export interface StravaPhoto {
+  id: number
+  unique_id: string
+  urls: {
+    '100': string
+    '600': string
+  }
+  source: number
+  uploaded_at: string
+}
+
 export interface StravaActivity {
   id: number
   name: string
@@ -23,6 +34,11 @@ export interface StravaActivity {
   average_heartrate?: number
   max_heartrate?: number
   calories?: number
+  total_photo_count?: number
+  photos?: {
+    primary?: StravaPhoto
+    count?: number
+  }
 }
 
 export interface AthleteStats {
@@ -36,14 +52,15 @@ export interface AthleteStats {
 }
 
 export async function fetchActivities(accessToken: string): Promise<StravaActivity[]> {
-  const oneYearAgo = Math.floor(Date.now() / 1000) - (365 * 24 * 60 * 60)
+  // Fetch activities from the last 3 years to capture all personal records
+  const threeYearsAgo = Math.floor(Date.now() / 1000) - (3 * 365 * 24 * 60 * 60)
   let page = 1
   let allActivities: StravaActivity[] = []
   let hasMore = true
 
   while (hasMore) {
     const response = await fetch(
-      `${STRAVA_API_BASE}/athlete/activities?after=${oneYearAgo}&per_page=200&page=${page}`,
+      `${STRAVA_API_BASE}/athlete/activities?after=${threeYearsAgo}&per_page=200&page=${page}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -88,6 +105,30 @@ export async function fetchActivityDetail(
 
   if (!response.ok) {
     throw new Error(`Failed to fetch activity details: ${response.statusText}`)
+  }
+
+  return response.json()
+}
+
+export async function fetchActivityPhotos(
+  accessToken: string,
+  activityId: number
+): Promise<StravaPhoto[]> {
+  const response = await fetch(
+    `${STRAVA_API_BASE}/activities/${activityId}/photos?size=600`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    // Photos endpoint might fail if no photos exist, return empty array
+    if (response.status === 404) {
+      return []
+    }
+    throw new Error(`Failed to fetch activity photos: ${response.statusText}`)
   }
 
   return response.json()

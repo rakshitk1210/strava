@@ -45,4 +45,51 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  /* Hide scrollbar but keep scroll functionality */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Custom scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #151819;
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #44494b;
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #696e70;
+  }
+  
+  /* Smooth scrolling for mobile */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #44494b #151819;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile touch optimizations */
+  @media (max-width: 768px) {
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+  }
 }

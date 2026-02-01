@@ -37,11 +37,12 @@ export function formatPace(metersPerSecond: number, unit: 'Km' | 'Miles'): strin
 export function formatTime(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
   
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
-  return `${minutes}`;
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
 }
 
 // Metric calculations for DashboardMetrics
@@ -98,15 +99,38 @@ export function findBestTime(
   targetDistance: number,
   unit: 'Km' | 'Miles' = 'Km'
 ): BestTime | null {
-  // Find runs within 5% of target distance
-  const tolerance = targetDistance * 0.05;
+  // Find runs within 10% of target distance (increased tolerance for GPS inaccuracies)
+  // This is especially important for longer distances like half marathons
+  const tolerance = targetDistance * 0.10;
   const matchingRuns = runs.filter(run => 
     Math.abs(run.distance - targetDistance) <= tolerance
   );
   
-  if (matchingRuns.length === 0) return null;
+  if (matchingRuns.length === 0) {
+    // Fallback: Look for longer runs that covered this distance
+    // For example, if no 15K race exists, use HM or FM data
+    const longerRuns = runs.filter(run => run.distance > targetDistance);
+    
+    if (longerRuns.length === 0) return null;
+    
+    // Find the run with the best pace that covered this distance
+    const bestPacedRun = longerRuns.reduce((best, run) => {
+      const currentPace = run.moving_time / run.distance;
+      const bestPace = best ? best.moving_time / best.distance : Infinity;
+      return currentPace < bestPace ? run : best;
+    }, longerRuns[0]);
+    
+    // Calculate the projected time at target distance using the pace from the longer run
+    const projectedTime = (bestPacedRun.moving_time / bestPacedRun.distance) * targetDistance;
+    
+    return {
+      time: formatTime(Math.round(projectedTime)),
+      date: format(new Date(bestPacedRun.start_date_local), "do MMM"),
+      pace: formatPace(bestPacedRun.average_speed, unit)
+    };
+  }
   
-  // Find the fastest run
+  // Find the fastest run at the target distance
   const fastest = matchingRuns.reduce((best, run) => {
     const currentPace = run.moving_time / run.distance;
     const bestPace = best.moving_time / best.distance;
@@ -188,45 +212,87 @@ export function aggregateTrendsByDate(
   metric: 'pace' | 'distance' | 'elevation',
   unit: 'Km' | 'Miles' = 'Km'
 ): TrendDataPoint[] {
-  if (runs.length === 0) return [];
+  if (runs.length === 0) {
+    // Return 12 months with zero values if no data
+    const result: TrendDataPoint[] = [];
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    for (let month = 0; month < 12; month++) {
+      const monthDate = new Date(currentYear, month, 1);
+      result.push({
+        date: format(monthDate, 'MMM'),
+        value: 0
+      });
+    }
+    return result;
+  }
   
-  // Sort runs by date
+  // Determine the year from the runs data (use the most recent run's year)
   const sortedRuns = [...runs].sort((a, b) => 
-    new Date(a.start_date_local).getTime() - new Date(b.start_date_local).getTime()
+    new Date(b.start_date_local).getTime() - new Date(a.start_date_local).getTime()
   );
+  const targetYear = new Date(sortedRuns[0].start_date_local).getFullYear();
   
-  // Take last 21 runs for trend visualization
-  const recentRuns = sortedRuns.slice(-21);
+  // Group runs by month
+  const monthlyData: { [key: string]: { runs: StravaActivity[], monthDate: Date } } = {};
   
-  return recentRuns.map(run => {
-    let value: number;
+  runs.forEach(run => {
+    const runDate = new Date(run.start_date_local);
+    const monthKey = format(runDate, 'yyyy-MM');
     
-    switch (metric) {
-      case 'pace':
-        // Convert pace to minutes per km/mile as decimal
-        const paceSeconds = run.distance / run.moving_time;
-        const distanceUnit = unit === 'Km' ? 1000 : 1609.34;
-        const secondsPerUnit = distanceUnit / run.average_speed;
-        value = secondsPerUnit / 60; // Convert to decimal minutes
-        break;
-      
-      case 'distance':
-        value = convertDistance(run.distance, unit);
-        break;
-      
-      case 'elevation':
-        value = run.total_elevation_gain;
-        break;
-      
-      default:
-        value = 0;
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = {
+        runs: [],
+        monthDate: new Date(runDate.getFullYear(), runDate.getMonth(), 1)
+      };
+    }
+    monthlyData[monthKey].runs.push(run);
+  });
+  
+  // Get all 12 months of the target year (Jan to Dec)
+  const result: TrendDataPoint[] = [];
+  
+  for (let month = 0; month < 12; month++) {
+    const monthDate = new Date(targetYear, month, 1);
+    const monthKey = format(monthDate, 'yyyy-MM');
+    const monthRuns = monthlyData[monthKey]?.runs || [];
+    
+    let value = 0;
+    
+    if (monthRuns.length > 0) {
+      switch (metric) {
+        case 'pace':
+          // Calculate average pace for the month
+          const totalDistance = monthRuns.reduce((sum, run) => sum + run.distance, 0);
+          const totalTime = monthRuns.reduce((sum, run) => sum + run.moving_time, 0);
+          if (totalDistance > 0) {
+            const avgSpeed = totalDistance / totalTime;
+            const distanceUnit = unit === 'Km' ? 1000 : 1609.34;
+            const secondsPerUnit = distanceUnit / avgSpeed;
+            value = secondsPerUnit / 60; // Convert to decimal minutes
+          }
+          break;
+        
+        case 'distance':
+          // Sum total distance for the month
+          const monthlyDistance = monthRuns.reduce((sum, run) => sum + run.distance, 0);
+          value = convertDistance(monthlyDistance, unit);
+          break;
+        
+        case 'elevation':
+          // Sum total elevation for the month
+          value = monthRuns.reduce((sum, run) => sum + run.total_elevation_gain, 0);
+          break;
+      }
     }
     
-    return {
-      date: format(new Date(run.start_date_local), 'dd MMM'),
+    result.push({
+      date: format(monthDate, 'MMM'),
       value: Math.round(value * 100) / 100
-    };
-  });
+    });
+  }
+  
+  return result;
 }
 
 // Streak for MonthlyStreak
