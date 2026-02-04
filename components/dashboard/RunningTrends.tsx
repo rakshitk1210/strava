@@ -128,7 +128,7 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
           <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] md:text-[13px] lg:text-[14px] leading-[1.5] text-[#696e70] tracking-[-0.42px]">
             Diligence
           </p>
-          <h2 className="font-['Titillium_Web',sans-serif] font-bold text-[20px] md:text-[22px] lg:text-[24px] leading-[1.4] text-[#f2f5f7] tracking-[-0.72px]">
+          <h2 className="font-['Titillium_Web',sans-serif] font-bold text-[24px] md:text-[22px] lg:text-[24px] leading-[1.4] text-[#f2f5f7] tracking-[-0.72px]">
             Running trends
           </h2>
         </div>
@@ -201,14 +201,14 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
               dataKey="date"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#696e70', fontSize: 10, fontFamily: 'Titillium Web' }}
+              tick={{ fill: '#696e70', fontSize: 12, fontFamily: 'Titillium Web' }}
               dy={10}
               interval="preserveStartEnd"
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#696e70', fontSize: 10, fontFamily: 'Titillium Web' }}
+              tick={{ fill: '#696e70', fontSize: 12, fontFamily: 'Titillium Web' }}
               ticks={currentTab.ticks}
               domain={currentTab.domain}
               tickFormatter={currentTab.formatTick}
@@ -216,8 +216,24 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
             <Tooltip
               cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
               contentStyle={{ backgroundColor: '#151819', border: '1px solid #252a2c', borderRadius: '8px' }}
-              labelStyle={{ color: '#989ea0' }}
-              itemStyle={{ color: currentTab.color }}
+              labelStyle={{ color: '#989ea0', fontFamily: 'Titillium Web', fontSize: '12px' }}
+              itemStyle={{ color: currentTab.color, fontFamily: 'Titillium Web', fontSize: '12px' }}
+              formatter={(value: number) => {
+                if (activeTab === 'Pace') {
+                  const minutes = Math.floor(value);
+                  const seconds = Math.round((value - minutes) * 60);
+                  return [`${minutes}:${seconds.toString().padStart(2, '0')} min/${unit.toLowerCase()}`, ''];
+                } else if (activeTab === 'Distance') {
+                  return [`${value.toFixed(2)} ${unit.toLowerCase()}`, ''];
+                } else {
+                  return [`${value.toFixed(0)} ${unit === 'Km' ? 'm' : 'ft'}`, ''];
+                }
+              }}
+              labelFormatter={(label: string) => {
+                // For monthly view, label is already the month name (e.g., "Jan", "Feb")
+                // For weekly view, label might be "Week 1", "Week 2", etc.
+                return label;
+              }}
             />
             <Bar dataKey="value" radius={[4, 4, 4, 4]} maxBarSize={32}>
               {currentTab.data.map((entry, index) => (

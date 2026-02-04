@@ -28,45 +28,47 @@ interface StatCardProps {
 function StatCard({ label, value, unit, fill, stroke, color, gradientId }: StatCardProps) {
   return (
     <>
-      {/* Mobile: Horizontal layout (label/value left, sparkline right) */}
-      <div className="md:hidden flex items-start justify-between h-[94px] w-full relative overflow-hidden rounded-[0px]">
-        {/* Left: Label and Value */}
-        <div className="flex flex-col items-start z-10 w-[132px] shrink-0 pb-[4px]">
-          <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] text-[#696e70] leading-[1.4] mb-[2px]">
-            {label}
-          </p>
-          <div className="flex items-baseline gap-[2px] mb-[-4px]">
-            <p className="font-['Teko',sans-serif] font-bold text-[40px] text-[#f2f5f7] leading-[1.4]">
-              {value}
+      {/* Mobile: Horizontal layout with center alignment */}
+      <div className="md:hidden flex items-center justify-center h-[94px] w-full relative overflow-hidden rounded-[0px]">
+        <div className="flex items-start justify-center h-full w-full max-w-[360px]">
+          {/* Left: Label and Value */}
+          <div className="flex flex-col items-start z-10 w-[132px] shrink-0 pb-[4px] h-full">
+            <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] text-[#696e70] leading-[1.4] mb-[2px]">
+              {label}
             </p>
-            <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] text-[#696e70] leading-[1.5] tracking-[-0.42px]">
-              {unit}
-            </p>
+            <div className="flex items-baseline gap-[2px] mb-[-4px]">
+              <p className="font-['Teko',sans-serif] font-bold text-[40px] text-[#f2f5f7] leading-[1.4]">
+                {value}
+              </p>
+              <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] text-[#696e70] leading-[1.5] tracking-[-0.42px]">
+                {unit}
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Right: Sparkline - Takes remaining space */}
-        <div className="flex-1 h-full min-h-px min-w-px relative">
-          <div className="absolute bottom-0 left-0 w-full h-[50px]">
-            <svg className="w-full h-full block" viewBox="0 0 231.536 50.5742" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id={`${gradientId}-mobile`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-                  <stop offset="100%" stopColor={color} stopOpacity="0.1" />
-                </linearGradient>
-              </defs>
-              <path
-                d={fill}
-                fill={`url(#${gradientId}-mobile)`}
-                fillOpacity="1"
-              />
-              <path
-                d={stroke}
-                stroke={color}
-                strokeWidth="2"
-                fill="none"
-              />
-            </svg>
+          {/* Right: Sparkline - Takes remaining space */}
+          <div className="flex-1 h-full min-h-px min-w-px relative w-full">
+            <div className="absolute bottom-0 left-0 w-full h-[50px]">
+              <svg className="w-full h-full block" viewBox="0 0 231.536 50.5742" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id={`${gradientId}-mobile`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+                    <stop offset="100%" stopColor={color} stopOpacity="0.1" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d={fill}
+                  fill={`url(#${gradientId}-mobile)`}
+                  fillOpacity="1"
+                />
+                <path
+                  d={stroke}
+                  stroke={color}
+                  strokeWidth="2"
+                  fill="none"
+                />
+              </svg>
+            </div>
           </div>
         </div>
       </div>

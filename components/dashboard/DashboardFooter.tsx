@@ -6,7 +6,7 @@ export function DashboardFooter() {
       {/* Large Gradient Text */}
       <div className="w-full flex justify-center items-center px-0">
         <h1 
-          className="font-['Teko',sans-serif] font-semibold text-[36px] sm:text-[60px] md:text-[100px] lg:text-[140px] xl:text-[173px] leading-[0.85] text-center tracking-[-0.03em] select-none uppercase"
+          className="font-['Teko',sans-serif] font-semibold text-[56px] sm:text-[80px] md:text-[100px] lg:text-[140px] xl:text-[173px] leading-[0.85] text-center tracking-[-0.03em] select-none uppercase"
           style={{ 
              background: "linear-gradient(180deg, #494949 20.19%, #060809 66.94%)",
              WebkitBackgroundClip: "text",

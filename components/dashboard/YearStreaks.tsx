@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StravaActivity } from '@/lib/strava';
 import { format, getDaysInMonth } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -8,7 +8,16 @@ interface YearStreaksProps {
   year: number;
 }
 
+interface DayData {
+  day: number;
+  date: string;
+  isRunningDay: boolean;
+  activities: StravaActivity[];
+}
+
 export function YearStreaks({ runs, year }: YearStreaksProps) {
+  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
+  
   // Calculate running days for the year
   const runningDaysData = useMemo(() => {
     // Create a Map of running days with their activities
@@ -65,11 +74,68 @@ export function YearStreaks({ runs, year }: YearStreaksProps) {
           Consistency
         </p>
         <div className="flex flex-col justify-center leading-[0] mb-[-2px] relative shrink-0">
-          <p className="font-['Titillium_Web',sans-serif] font-bold leading-[1.4] text-[#f2f5f7] text-[20px] md:text-[22px] lg:text-[24px] tracking-[-0.72px]">
+          <p className="font-['Titillium_Web',sans-serif] font-bold leading-[1.4] text-[#f2f5f7] text-[24px] md:text-[22px] lg:text-[24px] tracking-[-0.72px]">
             Running days ({runningDaysData.totalRunningDays})
           </p>
         </div>
       </div>
+
+      {/* Mobile Day Details Bottom Sheet */}
+      {selectedDay && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="md:hidden fixed inset-0 bg-black/70 z-40 animate-in fade-in duration-200"
+            onClick={() => setSelectedDay(null)}
+          />
+          
+          {/* Bottom Sheet */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#151819] rounded-t-[16px] border-t border-[#252A2C] animate-in slide-in-from-bottom duration-300">
+            <div className="p-[20px]">
+              {/* Handle bar */}
+              <div className="w-[40px] h-[4px] bg-[#44494b] rounded-full mx-auto mb-[20px]" />
+              
+              {/* Header with close button */}
+              <div className="flex justify-between items-start mb-[16px]">
+                <p className={`font-semibold text-[16px] ${selectedDay.isRunningDay ? 'text-[#04b488]' : 'text-[#f2f5f7]'}`}>
+                  {format(new Date(selectedDay.date), 'EEEE, MMM d, yyyy')}
+                </p>
+                <button 
+                  onClick={() => setSelectedDay(null)}
+                  className="text-[#696e70] hover:text-[#f2f5f7] transition-colors p-1"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Content */}
+              {selectedDay.isRunningDay ? (
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pb-[20px]">
+                  {selectedDay.activities.map((activity, idx) => (
+                    <div key={idx} className="space-y-2 border-t border-[#44494b] pt-4 first:border-t-0 first:pt-0">
+                      <p className="font-semibold text-[#f2f5f7] text-[15px]">{activity.name}</p>
+                      <div className="flex gap-5 text-[13px] text-[#696e70]">
+                        <span>{(activity.distance / 1000).toFixed(2)} km</span>
+                        <span>{Math.floor(activity.moving_time / 60)} min</span>
+                        {activity.distance > 0 && (() => {
+                          const paceMinPerKm = (activity.moving_time / 60) / (activity.distance / 1000);
+                          const minutes = Math.floor(paceMinPerKm);
+                          const seconds = Math.floor((paceMinPerKm - minutes) * 60);
+                          return <span>{minutes}:{seconds.toString().padStart(2, '0')} min/km</span>;
+                        })()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[14px] text-[#696e70] pb-[20px]">Rest day</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Scrollable List Container */}
       <div className="flex-1 w-full min-h-0 relative border border-[#252A2C] rounded-[0px] overflow-hidden bg-[#060809]">
@@ -90,14 +156,15 @@ export function YearStreaks({ runs, year }: YearStreaksProps) {
                         <Tooltip key={dayIndex}>
                           <TooltipTrigger asChild>
                             <div
-                              className={`relative rounded-[3px] md:rounded-[4px] shrink-0 size-[20px] md:size-[24px] cursor-pointer transition-transform hover:scale-110 ${
+                              className={`relative rounded-[0px] shrink-0 size-[20px] md:size-[24px] cursor-pointer transition-all hover:scale-110 ${
                                 dayData.isRunningDay ? 'bg-[#04b488]' : 'bg-[#151819]'
-                              }`}
+                              } ${selectedDay?.date === dayData.date ? 'ring-2 ring-[#04b488] ring-offset-2 ring-offset-[#060809]' : ''}`}
+                              onClick={() => setSelectedDay(selectedDay?.date === dayData.date ? null : dayData)}
                             >
-                              <div aria-hidden="true" className="absolute border-2 border-[#060809] border-solid inset-0 pointer-events-none rounded-[3px] md:rounded-[4px]" />
+                              <div aria-hidden="true" className="absolute border-2 border-[#060809] border-solid inset-0 pointer-events-none rounded-[0px]" />
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-[280px]">
+                          <TooltipContent side="top" className="max-w-[280px] hidden md:block">
                             {dayData.isRunningDay ? (
                               <div className="space-y-2">
                                 <p className="font-semibold text-[#04b488]">
@@ -109,9 +176,12 @@ export function YearStreaks({ runs, year }: YearStreaksProps) {
                                     <div className="flex gap-3 text-[#696e70]">
                                       <span>{(activity.distance / 1000).toFixed(2)} km</span>
                                       <span>{Math.floor(activity.moving_time / 60)} min</span>
-                                      {activity.average_speed > 0 && (
-                                        <span>{(1000 / 60 / activity.average_speed).toFixed(2)} min/km</span>
-                                      )}
+                                      {activity.distance > 0 && (() => {
+                                        const paceMinPerKm = (activity.moving_time / 60) / (activity.distance / 1000);
+                                        const minutes = Math.floor(paceMinPerKm);
+                                        const seconds = Math.floor((paceMinPerKm - minutes) * 60);
+                                        return <span>{minutes}:{seconds.toString().padStart(2, '0')} min/km</span>;
+                                      })()}
                                     </div>
                                   </div>
                                 ))}

@@ -48,7 +48,7 @@ export function RecordsCard({ runs, unit }: RecordsCardProps) {
           Effort
         </p>
         <div className="flex flex-col items-start w-full mb-[-2px]">
-          <p className="font-['Titillium_Web',sans-serif] font-bold text-[20px] md:text-[22px] lg:text-[24px] leading-[1.4] text-[#f2f5f7] tracking-[-0.72px]">
+          <p className="font-['Titillium_Web',sans-serif] font-bold text-[24px] md:text-[22px] lg:text-[24px] leading-[1.4] text-[#f2f5f7] tracking-[-0.72px]">
             Records
           </p>
         </div>

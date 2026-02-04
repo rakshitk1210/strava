@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { format } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,6 +35,7 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Generate years from 2020 to 2026
   const currentYear = new Date().getFullYear();
@@ -42,7 +44,11 @@ export function DashboardHeader({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isOutsideDesktop = dropdownRef.current && !dropdownRef.current.contains(target);
+      const isOutsideMobile = mobileDropdownRef.current && !mobileDropdownRef.current.contains(target);
+      
+      if (isOutsideDesktop && isOutsideMobile) {
         setIsYearPickerOpen(false);
       }
     }
@@ -51,7 +57,13 @@ export function DashboardHeader({
   }, []);
 
   const handleYearSelect = (year: number) => {
-    onYearChange?.(year);
+    console.log('Year selected:', year, 'Current year:', selectedYear);
+    if (onYearChange) {
+      console.log('Calling onYearChange with:', year);
+      onYearChange(year);
+    } else {
+      console.warn('onYearChange is not defined!');
+    }
     setIsYearPickerOpen(false);
   };
   
@@ -110,12 +122,16 @@ export function DashboardHeader({
 
               {/* Dropdown Menu */}
               {isYearPickerOpen && (
-                <div className="absolute top-[48px] right-0 bg-[#151819] border border-[#44494b] rounded-[12px] shadow-lg z-50 py-[8px] min-w-[120px]">
+                <div className="absolute top-[48px] right-0 bg-[#151819] border border-[#44494b] rounded-[12px] shadow-lg z-[9999] py-[8px] min-w-[120px]">
                   <div className="max-h-[320px] overflow-y-auto">
                     {years.map((year) => (
                       <button
                         key={year}
-                        onClick={() => handleYearSelect(year)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleYearSelect(year);
+                        }}
                         className={cn(
                           "w-full text-left px-[16px] py-[8px] text-[14px] font-['Titillium_Web',sans-serif] transition-colors",
                           selectedYear === year
@@ -158,11 +174,11 @@ export function DashboardHeader({
 
             {/* Connection Controls */}
             <div className="flex gap-[12px] items-center">
-              {isDemo && (
+              {/* {isDemo && (
                 <div className="px-[12px] py-[8px] rounded-full bg-[#fc5200]/20 border border-[#fc5200]/50">
                   <span className="text-[12px] font-medium text-[#fc5200] font-['Titillium_Web',sans-serif]">Demo Data</span>
                 </div>
-              )}
+              )} */}
               
               {isOwnData ? (
                 <button 
@@ -174,14 +190,24 @@ export function DashboardHeader({
                   </span>
                 </button>
               ) : (
-                <button 
-                  onClick={onConnect}
-                  className="bg-[#fc5200] h-[40px] px-[24px] rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
-                >
-                  <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[14px] leading-[20px]">
-                    Connect My Strava
-                  </span>
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button 
+                        onClick={onConnect}
+                        disabled
+                        className="bg-[#44494b] h-[40px] px-[24px] rounded-full flex items-center justify-center cursor-not-allowed opacity-50"
+                      >
+                        <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[14px] leading-[20px]">
+                          Connect My Strava
+                        </span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Coming Soon</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>
@@ -192,7 +218,7 @@ export function DashboardHeader({
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#151819] z-50 border-t border-[#252A2C]">
         <div className="flex items-center justify-between px-[16px] py-[16px] gap-[8px]">
           {/* Year Button */}
-          <div className="relative">
+          <div className="relative" ref={mobileDropdownRef}>
             <button 
               className="flex items-center gap-[6px] px-[16px] py-[8px] h-[32px] bg-[#1e2224] rounded-full text-[#f2f5f7] hover:opacity-80 transition-opacity"
               onClick={() => setIsYearPickerOpen(!isYearPickerOpen)}
@@ -205,12 +231,16 @@ export function DashboardHeader({
 
             {/* Dropdown Menu - Mobile (positioned above) */}
             {isYearPickerOpen && (
-              <div className="absolute bottom-[48px] left-0 bg-[#151819] border border-[#44494b] rounded-[12px] shadow-lg z-50 py-[8px] min-w-[120px]">
+              <div className="absolute bottom-[48px] left-0 bg-[#151819] border border-[#44494b] rounded-[12px] shadow-lg z-[9999] py-[8px] min-w-[120px]">
                 <div className="max-h-[320px] overflow-y-auto">
                   {years.map((year) => (
                     <button
                       key={year}
-                      onClick={() => handleYearSelect(year)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleYearSelect(year);
+                      }}
                       className={cn(
                         "w-full text-left px-[16px] py-[8px] text-[13px] font-['Titillium_Web',sans-serif] transition-colors",
                         selectedYear === year
@@ -252,11 +282,11 @@ export function DashboardHeader({
 
           {/* Connection Controls */}
           <div className="flex gap-[8px] items-center">
-            {isDemo && (
+            {/* {isDemo && (
               <div className="px-[10px] py-[5px] rounded-full bg-[#fc5200]/20 border border-[#fc5200]/50">
                 <span className="text-[11px] font-medium text-[#fc5200] font-['Titillium_Web',sans-serif]">Demo</span>
               </div>
-            )}
+            )} */}
             
             {isOwnData ? (
               <button 
@@ -268,14 +298,24 @@ export function DashboardHeader({
                 </span>
               </button>
             ) : (
-              <button 
-                onClick={onConnect}
-                className="bg-[#fc5200] h-[32px] px-[16px] rounded-full flex items-center justify-center hover:opacity-90 transition-opacity whitespace-nowrap"
-              >
-                <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[13px] leading-[20px]">
-                  Connect My Strava
-                </span>
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      onClick={onConnect}
+                      disabled
+                      className="bg-[#44494b] h-[32px] px-[16px] rounded-full flex items-center justify-center cursor-not-allowed opacity-50 whitespace-nowrap"
+                    >
+                      <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[13px] leading-[20px]">
+                        Connect My Strava
+                      </span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Coming Soon</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         </div>

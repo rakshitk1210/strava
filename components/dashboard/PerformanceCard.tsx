@@ -87,7 +87,7 @@ export function PerformanceCard({ runs, unit }: PerformanceCardProps) {
           Push
         </p>
         <div className="flex flex-col justify-center leading-[0] mb-[-2px] relative shrink-0">
-          <p className="font-['Titillium_Web',sans-serif] font-bold leading-[1.4] text-[#f2f5f7] text-[20px] md:text-[22px] lg:text-[24px] tracking-[-0.72px]">
+          <p className="font-['Titillium_Web',sans-serif] font-bold leading-[1.4] text-[#f2f5f7] text-[24px] md:text-[22px] lg:text-[24px] tracking-[-0.72px]">
             Performance
           </p>
         </div>

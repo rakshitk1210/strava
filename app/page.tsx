@@ -27,15 +27,41 @@ export default function Home() {
   const [isOwnData, setIsOwnData] = useState(false)
   const [isDemo, setIsDemo] = useState(false)
 
+  // Debug year changes
+  const handleYearChange = (year: number) => {
+    console.log('Page.tsx: Year change requested:', year, 'Current:', selectedYear);
+    setSelectedYear(year);
+    console.log('Page.tsx: setSelectedYear called with:', year);
+  }
+
+  // Debug: Log when selectedYear changes
+  useEffect(() => {
+    console.log('Page.tsx: selectedYear state changed to:', selectedYear);
+  }, [selectedYear]);
+
   // Filter runs by selected year
   const filteredRuns = useMemo(() => {
+    // If no runs yet, return empty array
+    if (runs.length === 0) {
+      // #region agent log
+      console.log('[DEBUG-B] No runs available:', {runsLength:runs.length,selectedYear:selectedYear});
+      fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:filteredRuns',message:'No runs available',data:{runsLength:runs.length,selectedYear:selectedYear},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      return [];
+    }
+    
     const yearStart = startOfYear(new Date(selectedYear, 0, 1));
     const yearEnd = endOfYear(new Date(selectedYear, 0, 1));
 
-    return runs.filter(run => {
+    const filtered = runs.filter(run => {
       const runDate = new Date(run.start_date_local);
       return isWithinInterval(runDate, { start: yearStart, end: yearEnd });
     });
+    // #region agent log
+    console.log('[DEBUG-B] Filtered runs by year:', {selectedYear:selectedYear,totalRuns:runs.length,filteredCount:filtered.length,yearStart:yearStart.toISOString(),yearEnd:yearEnd.toISOString()});
+    fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:filteredRuns',message:'Filtered runs by year',data:{selectedYear:selectedYear,totalRuns:runs.length,filteredCount:filtered.length,yearStart:yearStart.toISOString(),yearEnd:yearEnd.toISOString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    return filtered;
   }, [runs, selectedYear]);
 
   useEffect(() => {
@@ -54,12 +80,34 @@ export default function Home() {
       }
 
       const data = await response.json()
+      // #region agent log
+      console.log('[DEBUG-E] API response received:', {activitiesCount:data.activities?.length,isOwnData:data.isOwnData,isDemo:data.isDemo,firstActivity:data.activities?.[0]?.start_date_local,hasActivities:!!data.activities});
+      fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:fetchActivities',message:'API response received',data:{activitiesCount:data.activities?.length,isOwnData:data.isOwnData,isDemo:data.isDemo,firstActivity:data.activities?.[0]?.start_date_local},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      // Auto-select the most recent year with data BEFORE setting runs
+      if (data.activities.length > 0) {
+        const years = data.activities.map((run: StravaActivity) => 
+          getYear(new Date(run.start_date_local))
+        )
+        const mostRecentYear = Math.max(...years)
+        // #region agent log
+        console.log('[DEBUG-A] Year auto-detection:', {selectedYearBefore:selectedYear,yearsFound:years,mostRecentYear:mostRecentYear,activitiesCount:data.activities.length});
+        fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:yearDetection',message:'Year auto-detection',data:{selectedYearBefore:selectedYear,yearsFound:years,mostRecentYear:mostRecentYear,activitiesCount:data.activities.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        
+        // Set year FIRST to avoid race conditions
+        setSelectedYear(mostRecentYear)
+      }
+      
       setRuns(data.activities)
       setIsOwnData(data.isOwnData || false)
       setIsDemo(data.isDemo || false)
       setLastUpdated(new Date())
     } catch (err) {
       console.error('Error fetching activities:', err)
+      // #region agent log
+      fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:fetchActivitiesError',message:'Fetch error',data:{error:err instanceof Error ? err.message : String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       setError('Failed to load activities. Please try again.')
     } finally {
       setLoading(false)
@@ -121,7 +169,7 @@ export default function Home() {
         unit={unit}
         onUnitChange={setUnit}
         selectedYear={selectedYear}
-        onYearChange={setSelectedYear}
+        onYearChange={handleYearChange}
         isDemo={isDemo}
         isOwnData={isOwnData}
         onConnect={handleConnectStrava}
