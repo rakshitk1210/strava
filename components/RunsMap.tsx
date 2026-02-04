@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, memo } from 'react'
 import { StravaActivity } from '@/lib/strava'
 import polyline from '@mapbox/polyline'
 
@@ -8,13 +8,13 @@ interface RunsMapProps {
   runs: StravaActivity[]
 }
 
-export default function RunsMap({ runs }: RunsMapProps) {
+function RunsMap({ runs }: RunsMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const mapboxgl = useRef<any>(null)
   const markers = useRef<any[]>([])
   const initialized = useRef(false)
-  const mapReady = useRef(false)
+  const [mapReady, setMapReady] = useState(false)
   const controlsAdded = useRef(false)
 
   // Initialize map once
@@ -61,7 +61,7 @@ export default function RunsMap({ runs }: RunsMapProps) {
       // Wait for map to be fully loaded
       map.current.on('load', () => {
         console.log('Map loaded and ready')
-        mapReady.current = true
+        setMapReady(true)
         // #region agent log
         console.log('[DEBUG-D] Map fully loaded and ready');
         fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:mapReady',message:'Map ready',data:{mapReady:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
@@ -91,7 +91,7 @@ export default function RunsMap({ runs }: RunsMapProps) {
         map.current.remove()
         map.current = null
         initialized.current = false
-        mapReady.current = false
+        setMapReady(false)
         controlsAdded.current = false
       }
     }
@@ -100,17 +100,17 @@ export default function RunsMap({ runs }: RunsMapProps) {
   // Update routes when runs change OR when map becomes ready
   useEffect(() => {
     // #region agent log
-    console.log('[DEBUG-D] RunsMap effect triggered:', {runsCount:runs.length,mapReady:mapReady.current,initialized:initialized.current,hasMap:!!map.current,hasMapboxgl:!!mapboxgl.current});
-    fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:effectEntry',message:'RunsMap effect triggered',data:{runsCount:runs.length,mapReady:mapReady.current,initialized:initialized.current,hasMap:!!map.current,hasMapboxgl:!!mapboxgl.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+    console.log('[DEBUG-D] RunsMap effect triggered:', {runsCount:runs.length,mapReady:mapReady,initialized:initialized.current,hasMap:!!map.current,hasMapboxgl:!!mapboxgl.current});
+    fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:effectEntry',message:'RunsMap effect triggered',data:{runsCount:runs.length,mapReady:mapReady,initialized:initialized.current,hasMap:!!map.current,hasMapboxgl:!!mapboxgl.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
     // #endregion
-    console.log('RunsMap effect triggered, runs count:', runs.length, 'mapReady:', mapReady.current)
+    console.log('RunsMap effect triggered, runs count:', runs.length, 'mapReady:', mapReady)
     
-    // Early exit if map not initialized
-    if (!map.current || !mapboxgl.current || !initialized.current) {
-      console.log('Map not initialized yet')
+    // Early exit if map not ready - only check what we actually need
+    if (!map.current || !mapReady) {
+      console.log('Map not ready yet:', {hasMap: !!map.current, mapReady})
       // #region agent log
-      console.log('[DEBUG-D] Map not initialized:', {hasMap:!!map.current,hasMapboxgl:!!mapboxgl.current,initialized:initialized.current});
-      fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:earlyExit',message:'Map not initialized',data:{hasMap:!!map.current,hasMapboxgl:!!mapboxgl.current,initialized:initialized.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+      console.log('[DEBUG-D] Map not ready:', {hasMap:!!map.current,mapReady:mapReady});
+      fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RunsMap.tsx:earlyExit',message:'Map not ready',data:{hasMap:!!map.current,mapReady:mapReady},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
       return
     }
@@ -281,29 +281,10 @@ export default function RunsMap({ runs }: RunsMapProps) {
       }
     }
 
-    // Try to update routes, handling map ready state
-    if (map.current.loaded() && map.current.isStyleLoaded()) {
-      // Map is fully ready, update immediately
-      console.log('Map is ready, updating routes immediately')
-      updateRoutes()
-    } else {
-      // Map not ready yet, wait for load event
-      console.log('Map not ready yet, waiting for load...')
-      const onLoad = () => {
-        console.log('Map loaded, updating routes')
-        mapReady.current = true
-        updateRoutes()
-      }
-      
-      map.current.once('load', onLoad)
-      
-      return () => {
-        if (map.current) {
-          map.current.off('load', onLoad)
-        }
-      }
-    }
-  }, [runs])
+    // Map is ready (we already checked mapReady above), update routes
+    console.log('Map is ready, updating routes')
+    updateRoutes()
+  }, [runs, mapReady])
 
   return (
     <>
@@ -366,4 +347,16 @@ export default function RunsMap({ runs }: RunsMapProps) {
     </>
   )
 }
+
+// Memoize component to prevent unnecessary re-mounts
+// Only re-render if runs array length or content changes
+export default memo(RunsMap, (prevProps, nextProps) => {
+  // Return true if props are equal (skip re-render)
+  // Return false if props are different (do re-render)
+  if (prevProps.runs.length !== nextProps.runs.length) return false
+  if (prevProps.runs.length === 0) return true
+  // Check if first and last run IDs are the same as a quick comparison
+  return prevProps.runs[0]?.id === nextProps.runs[0]?.id && 
+         prevProps.runs[prevProps.runs.length - 1]?.id === nextProps.runs[nextProps.runs.length - 1]?.id
+})
 

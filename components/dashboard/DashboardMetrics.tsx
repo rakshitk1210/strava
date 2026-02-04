@@ -32,7 +32,7 @@ function StatCard({ label, value, unit, fill, stroke, color, gradientId }: StatC
       <div className="md:hidden flex items-center justify-center h-[94px] w-full relative overflow-hidden rounded-[0px]">
         <div className="flex items-start justify-center h-full w-full max-w-[360px]">
           {/* Left: Label and Value */}
-          <div className="flex flex-col items-start z-10 w-[132px] shrink-0 pb-[4px] h-full">
+          <div className="flex flex-col items-start justify-end z-10 w-[132px] shrink-0 pb-[4px] h-full">
             <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] text-[#696e70] leading-[1.4] mb-[2px]">
               {label}
             </p>
@@ -135,20 +135,16 @@ export function DashboardMetrics({ runs, unit }: DashboardMetricsProps) {
   const elevationSparkline = getSparklineData(runs, 'elevation', unit, 20);
   const sessionsSparkline = getSparklineData(runs, 'sessions', unit, 20);
 
-  const getTrendColor = (start: number, end: number, type: 'pace' | 'volume') => {
-    // For pace, lower is better (faster)
-    if (type === 'pace') {
-      return end < start ? '#04b488' : '#fc5200';
-    }
-    // For others (distance, etc), higher is better
+  const getTrendColor = (start: number, end: number) => {
+    // Green when line goes up (increasing), Red when line goes down (decreasing)
     return end > start ? '#04b488' : '#fc5200';
   };
 
-  const paceColor = getTrendColor(paceSparkline.startValue, paceSparkline.endValue, 'pace');
-  const distanceColor = getTrendColor(distanceSparkline.startValue, distanceSparkline.endValue, 'volume');
-  const timeColor = getTrendColor(timeSparkline.startValue, timeSparkline.endValue, 'volume');
-  const elevationColor = getTrendColor(elevationSparkline.startValue, elevationSparkline.endValue, 'volume');
-  const sessionsColor = getTrendColor(sessionsSparkline.startValue, sessionsSparkline.endValue, 'volume');
+  const paceColor = getTrendColor(paceSparkline.startValue, paceSparkline.endValue);
+  const distanceColor = getTrendColor(distanceSparkline.startValue, distanceSparkline.endValue);
+  const timeColor = getTrendColor(timeSparkline.startValue, timeSparkline.endValue);
+  const elevationColor = getTrendColor(elevationSparkline.startValue, elevationSparkline.endValue);
+  const sessionsColor = getTrendColor(sessionsSparkline.startValue, sessionsSparkline.endValue);
 
   return (
     <div className="w-full max-w-[1440px] px-[0px] pb-[0px] pt-[32px] md:pt-[24px] lg:pt-[32px]">

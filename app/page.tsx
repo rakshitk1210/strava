@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { flushSync } from 'react-dom'
 import { StravaActivity } from '@/lib/strava'
 import RunsMap from '@/components/RunsMap'
 import RunDetails from '@/components/RunDetails'
@@ -84,25 +85,28 @@ export default function Home() {
       console.log('[DEBUG-E] API response received:', {activitiesCount:data.activities?.length,isOwnData:data.isOwnData,isDemo:data.isDemo,firstActivity:data.activities?.[0]?.start_date_local,hasActivities:!!data.activities});
       fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:fetchActivities',message:'API response received',data:{activitiesCount:data.activities?.length,isOwnData:data.isOwnData,isDemo:data.isDemo,firstActivity:data.activities?.[0]?.start_date_local},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
       // #endregion
-      // Auto-select the most recent year with data BEFORE setting runs
-      if (data.activities.length > 0) {
-        const years = data.activities.map((run: StravaActivity) => 
-          getYear(new Date(run.start_date_local))
-        )
-        const mostRecentYear = Math.max(...years)
-        // #region agent log
-        console.log('[DEBUG-A] Year auto-detection:', {selectedYearBefore:selectedYear,yearsFound:years,mostRecentYear:mostRecentYear,activitiesCount:data.activities.length});
-        fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:yearDetection',message:'Year auto-detection',data:{selectedYearBefore:selectedYear,yearsFound:years,mostRecentYear:mostRecentYear,activitiesCount:data.activities.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
+      // Batch ALL state updates together to prevent multiple re-renders
+      flushSync(() => {
+        // Auto-select the most recent year with data
+        if (data.activities.length > 0) {
+          const years = data.activities.map((run: StravaActivity) => 
+            getYear(new Date(run.start_date_local))
+          )
+          const mostRecentYear = Math.max(...years)
+          // #region agent log
+          console.log('[DEBUG-A] Year auto-detection:', {selectedYearBefore:selectedYear,yearsFound:years,mostRecentYear:mostRecentYear,activitiesCount:data.activities.length});
+          fetch('http://127.0.0.1:7246/ingest/390d698b-bce8-4585-98d8-29d7ba3381e7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'page.tsx:yearDetection',message:'Year auto-detection',data:{selectedYearBefore:selectedYear,yearsFound:years,mostRecentYear:mostRecentYear,activitiesCount:data.activities.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
+          
+          setSelectedYear(mostRecentYear)
+        }
         
-        // Set year FIRST to avoid race conditions
-        setSelectedYear(mostRecentYear)
-      }
-      
-      setRuns(data.activities)
-      setIsOwnData(data.isOwnData || false)
-      setIsDemo(data.isDemo || false)
-      setLastUpdated(new Date())
+        // Set all data in one batch to prevent re-renders
+        setRuns(data.activities)
+        setIsOwnData(data.isOwnData || false)
+        setIsDemo(data.isDemo || false)
+        setLastUpdated(new Date())
+      })
     } catch (err) {
       console.error('Error fetching activities:', err)
       // #region agent log
@@ -177,7 +181,7 @@ export default function Home() {
       />
       
       {/* Main Content Stack - Mobile First, Desktop Responsive */}
-      <div className="w-full max-w-[1440px] flex flex-col gap-[32px] md:gap-[48px] lg:gap-[64px] mb-[80px] md:mb-[100px] lg:mb-[120px] px-[16px] md:px-[32px] lg:px-[64px] justify-start items-center">
+      <div className="w-full max-w-[1440px] flex flex-col gap-[32px] md:gap-[48px] lg:gap-[64px] mb-[120px] md:mb-[100px] lg:mb-[120px] px-[16px] md:px-[32px] lg:px-[64px] justify-start items-center">
         
         {/* Metrics Section - Stacks vertically on mobile, grid on larger screens */}
         <DashboardMetrics runs={filteredRuns} unit={unit} />
