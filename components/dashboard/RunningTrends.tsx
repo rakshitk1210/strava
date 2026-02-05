@@ -218,7 +218,8 @@ export function RunningTrends({ runs, unit }: RunningTrendsProps) {
               contentStyle={{ backgroundColor: '#151819', border: '1px solid #252a2c', borderRadius: '8px' }}
               labelStyle={{ color: '#989ea0', fontFamily: 'Titillium Web', fontSize: '12px' }}
               itemStyle={{ color: currentTab.color, fontFamily: 'Titillium Web', fontSize: '12px' }}
-              formatter={(value: number) => {
+              formatter={(value: number | undefined) => {
+                if (!value) return ['', ''];
                 if (activeTab === 'Pace') {
                   const minutes = Math.floor(value);
                   const seconds = Math.round((value - minutes) * 60);
