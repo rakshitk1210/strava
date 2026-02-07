@@ -28,11 +28,11 @@ interface StatCardProps {
 function StatCard({ label, value, unit, fill, stroke, color, gradientId }: StatCardProps) {
   return (
     <>
-      {/* Mobile: Horizontal layout with center alignment */}
-      <div className="md:hidden flex items-center justify-center h-[94px] w-full relative overflow-hidden rounded-[0px]">
-        <div className="flex items-start justify-center h-full w-full max-w-[360px]">
+      {/* Mobile: Horizontal layout with responsive scaling */}
+      <div className="md:hidden flex items-center justify-start h-[94px] w-full relative overflow-hidden rounded-[0px]">
+        <div className="flex items-start h-full w-full">
           {/* Left: Label and Value */}
-          <div className="flex flex-col items-start justify-end z-10 w-[132px] shrink-0 pb-[4px] h-full">
+          <div className="flex flex-col items-start justify-end z-10 min-w-[100px] w-[35%] max-w-[132px] shrink-0 pb-[0px] h-full">
             <p className="font-['Titillium_Web',sans-serif] font-semibold text-[12px] text-[#696e70] leading-[1.4] mb-[2px]">
               {label}
             </p>
@@ -47,7 +47,7 @@ function StatCard({ label, value, unit, fill, stroke, color, gradientId }: StatC
           </div>
 
           {/* Right: Sparkline - Takes remaining space */}
-          <div className="flex-1 h-full min-h-px min-w-px relative w-full">
+          <div className="flex-1 h-full min-h-px min-w-0 relative w-full">
             <div className="absolute bottom-0 left-0 w-full h-[50px]">
               <svg className="w-full h-full block" viewBox="0 0 231.536 50.5742" preserveAspectRatio="none">
                 <defs>
@@ -147,9 +147,9 @@ export function DashboardMetrics({ runs, unit }: DashboardMetricsProps) {
   const sessionsColor = getTrendColor(sessionsSparkline.startValue, sessionsSparkline.endValue);
 
   return (
-    <div className="w-full max-w-[1440px] px-[0px] pb-[0px] pt-[32px] md:pt-[24px] lg:pt-[32px]">
+    <div className="w-full max-w-[1440px] md:px-[0px] pb-[0px] pt-[32px] md:pt-[24px] lg:pt-[32px]">
       {/* Mobile: Vertical stack with horizontal card content */}
-      <div className="md:hidden flex flex-col gap-[32px] px-[16px]">
+      <div className="md:hidden flex flex-col gap-[32px]">
         <StatCard
           label="Average pace"
           value={avgPace}

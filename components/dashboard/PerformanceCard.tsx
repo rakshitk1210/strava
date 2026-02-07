@@ -17,7 +17,7 @@ interface PerformanceItemProps {
 
 function PerformanceItem({ label, value, subtext, isWaiting }: PerformanceItemProps) {
   return (
-    <div className="flex gap-[32px] md:gap-[16px] items-center relative shrink-0 w-full">
+    <div className="flex gap-[16px] md:gap-[16px] items-center relative shrink-0 w-full">
       {/* Label Box */}
       <div className="bg-[#0e1111] h-[38px] w-[38px] md:h-[41px] md:w-[41px] overflow-hidden relative rounded-[6px] md:rounded-[8px] shrink-0 flex items-center justify-center">
         <p className={cn(

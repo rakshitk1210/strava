@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { format } from 'date-fns';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from 'sonner';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -190,24 +190,17 @@ export function DashboardHeader({
                   </span>
                 </button>
               ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button 
-                        onClick={onConnect}
-                        disabled
-                        className="bg-[#44494b] h-[40px] px-[24px] rounded-full flex items-center justify-center cursor-not-allowed opacity-50"
-                      >
-                        <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[14px] leading-[20px]">
-                          Connect My Strava
-                        </span>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Coming Soon</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <button 
+                  onClick={() => toast.info('Strava Coming Soon', {
+                    description: 'Rakshit is working on it.',
+                    duration: 3000,
+                  })}
+                  className="bg-[#44494b] h-[40px] px-[24px] rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
+                >
+                  <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[14px] leading-[20px]">
+                    Connect My Strava
+                  </span>
+                </button>
               )}
             </div>
           </div>
@@ -298,24 +291,17 @@ export function DashboardHeader({
                 </span>
               </button>
             ) : (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button 
-                      onClick={onConnect}
-                      disabled
-                      className="bg-[#44494b] h-[32px] px-[16px] rounded-full flex items-center justify-center cursor-not-allowed opacity-50 whitespace-nowrap"
-                    >
-                      <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[13px] leading-[20px]">
-                        Connect My Strava
-                      </span>
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Coming Soon</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <button 
+                onClick={() => toast.info('Strava connection coming soon', {
+                  description: 'Rakshit is working on it.',
+                  duration: 3000,
+                })}
+                className="bg-[#44494b] h-[32px] px-[16px] rounded-full flex items-center justify-center hover:opacity-80 transition-opacity whitespace-nowrap"
+              >
+                <span className="font-['Titillium_Web',sans-serif] font-semibold text-[#f2f5f7] text-[13px] leading-[20px]">
+                  Connect My Strava
+                </span>
+              </button>
             )}
           </div>
         </div>

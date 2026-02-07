@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter, Titillium_Web } from "next/font/google"
 import "./globals.css"
+import { Toaster } from 'sonner'
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${titilliumWeb.variable} font-sans antialiased`}>
         {children}
+        <Toaster theme="dark" position="top-center" />
       </body>
     </html>
   )

@@ -181,7 +181,7 @@ export default function Home() {
       />
       
       {/* Main Content Stack - Mobile First, Desktop Responsive */}
-      <div className="w-full max-w-[1440px] flex flex-col gap-[32px] md:gap-[48px] lg:gap-[64px] mb-[120px] md:mb-[100px] lg:mb-[120px] px-[16px] md:px-[32px] lg:px-[64px] justify-start items-center">
+      <div className="w-full max-w-[1440px] flex flex-col gap-[64px] md:gap-[48px] lg:gap-[64px] mb-[80px] md:mb-[100px] lg:mb-[120px] px-[16px] md:px-[32px] lg:px-[64px] justify-start items-center">
         
         {/* Metrics Section - Stacks vertically on mobile, grid on larger screens */}
         <DashboardMetrics runs={filteredRuns} unit={unit} />
@@ -192,7 +192,7 @@ export default function Home() {
         </div>
 
         {/* Records & Trends Row - Stack on mobile */}
-        <div className="flex flex-col lg:flex-row gap-[32px] w-full">
+        <div className="flex flex-col lg:flex-row gap-[64px] w-full">
           {/* Records - Full width on mobile */}
           <div className="w-full lg:w-[328px] xl:w-[264px] shrink-0 h-full">
             <RecordsCard runs={runs} unit={unit} />
@@ -204,7 +204,7 @@ export default function Home() {
         </div>
 
         {/* Performance & Consistency Row - Stack on mobile */}
-        <div className="flex flex-col lg:flex-row gap-[32px] w-full">
+        <div className="flex flex-col lg:flex-row gap-[64px] w-full">
           {/* Performance - Full width on mobile */}
           <div className="w-full lg:w-[328px] xl:w-[264px] shrink-0 h-full">
             <PerformanceCard runs={runs} unit={unit} />
